@@ -1,5 +1,7 @@
 #include "shell.h"
 
+#define PROMPT_SIZE 3
+
 /**
  * main - Command line interpreter.
  *
@@ -9,13 +11,14 @@
  */
 int main(int argc, char **argv)
 {
-	char *prompt;
+	cmd_t cmd;
 	char *line;
 	size_t n;
-	(void) argc;
-	(void) argv;
+	int bg_proc;
+	(void) argc, (void) argv;
 
-	prompt = "> ";
+	const char *prompt = "> ";
+
 	while (1)
 	{
 		line = malloc(sizeof(char) * MAXLINE);
@@ -26,16 +29,14 @@ int main(int argc, char **argv)
 		printf("%s", prompt);
 
 		n = MAXLINE;
-		n = getline(&line, &n, stdin);
-		if ((int) n == -1)
+		if (getline(&line, &n, stdin) == -1)
 		{
-			perror("getline() returned error");
 			free(line);
 			exit(EXIT_FAILURE);
 		}
 		line[strlen(line) - 1] = '\0';
-		_exec(line);
-
+		parser(&cmd, line);
+		_exec(&cmd);
 		free(line);
 	}
 

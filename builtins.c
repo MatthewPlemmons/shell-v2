@@ -1,42 +1,6 @@
 #include "shell.h"
 
 /**
- * update_env - Update environment variables.
- *
- * @old_dir: path of the previous working directory
- * Return: 0
- */
-int update_env(char *old_dir)
-{
-	char *curr_dir;
-	size_t i;
-
-	for (i = 0; environ[i]; ++i)
-	{
-		if (strstr(environ[i], "PWD="))
-		{
-			curr_dir = NULL;
-			curr_dir = getcwd(curr_dir, PATH_MAX);
-			environ[i] = strcpy(environ[i] + 4, curr_dir);
-			environ[i] -= 4;
-			free(curr_dir);
-			break;
-		}
-	}
-
-	for (i = 0; environ[i]; ++i)
-	{
-		if (strstr(environ[i], "OLDPWD="))
-		{
-			environ[i] = strcpy(environ[i] + 7, old_dir);
-			environ[i] -= 7;
-			break;
-		}
-	}
-	return (0);
-}
-
-/**
  * _cd - Change the current working directory.
  *
  * @cmd: cmd struct
@@ -44,44 +8,45 @@ int update_env(char *old_dir)
  */
 int _cd(cmd_t *cmd)
 {
-	char *home_dir, *old_dir;
+	char *pwd, *oldpwd;
 	size_t i;
 
-	old_dir = NULL;
-	old_dir = getcwd(old_dir, PATH_MAX);
-
-	/* if no arg, move to home dir instead of printing error message */
+	oldpwd = NULL;
+	oldpwd = getcwd(oldpwd, PATH_MAX);
 	if (cmd->argv[1] == NULL)
 	{
-		/* find $HOME in environ, then chdir to it */
-		for (i = 0; environ[i]; ++i)
-		{
-			if (strstr(environ[i], "HOME="))
-			{
-				home_dir = environ[i] + 5;
-				break;
-			}
-		}
+		pwd = _getenv("HOME=");
 
-		if (chdir(home_dir) == 0)
+		if (chdir(pwd) == 0)
 		{
-			printf("\nDirectory changed.\n");
-			update_env(old_dir);
+			_setenv("OLDPWD=", oldpwd);
+			_setenv("PWD=", pwd);
 		}
 		else
 			perror("Failed to change directory.\n");
 	}
 	else
 	{
-		if (chdir(cmd->argv[1]) == 0)
+		if (cmd->argv[1][0] == '-')
 		{
-			printf("\nDirectory changed.\n");
-			update_env(old_dir);
+			pwd  = _getenv("OLDPWD=");
+
+			if (chdir(pwd) == 0)
+			{
+				_setenv("OLDPWD=", oldpwd);
+				_setenv("PWD=", pwd);
+			}
+		}
+		else if (chdir(cmd->argv[1]) == 0)
+		{
+			pwd = _strndup(cmd->argv[1], sizeof(cmd->argv[1]));
+			_setenv("OLDPWD=", oldpwd);
+			_setenv("PWD=", pwd);
 		}
 		else
 			perror("Failed to change directory.\n");
 	}
-	free(old_dir);
+
 	return (0);
 }
 
