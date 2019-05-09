@@ -1,2 +1,10 @@
-all: shell.c builtins.c execute.c parser.c
-	gcc -g -o hsh *.c
+CC=gcc
+CFLAGS=-g
+DEPS = shell.h
+OBJ = strings.o strings2.o shell.o env.o builtins.o execute.o parser.o
+
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+hsh: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS)
